@@ -11,16 +11,12 @@ public abstract class Matrix
         var result = new int[rows, cols];
 
         for (var i = 0; i < rows; i++)
-        {
-            for (var j = 0; j < cols; j++)
-            {
-                result[i, j] = rng.Next();
-            }
-        }
+        for (var j = 0; j < cols; j++)
+            result[i, j] = rng.Next();
 
         return result;
     }
-    
+
     public static int[,] Multiply(int[,] a, int[,] b)
     {
         ArgumentNullException.ThrowIfNull(a);
@@ -36,21 +32,16 @@ public abstract class Matrix
         var result = new int[aRows, bCols];
 
         for (var i = 0; i < aRows; i++)
+        for (var j = 0; j < bCols; j++)
         {
-            for (var j = 0; j < bCols; j++)
-            {
-                var sum = 0;
-                for (var k = 0; k < aCols; k++)
-                {
-                    sum += a[i, k] * b[k, j];
-                }
-                result[i, j] = sum;
-            }
+            var sum = 0;
+            for (var k = 0; k < aCols; k++) sum += a[i, k] * b[k, j];
+            result[i, j] = sum;
         }
 
         return result;
     }
-    
+
     public static int[,] Multiply(int[,] a, int[,] b, int maxThreads)
     {
         ArgumentNullException.ThrowIfNull(a);
@@ -73,13 +64,59 @@ public abstract class Matrix
             for (var j = 0; j < bCols; j++)
             {
                 var sum = 0;
-                for (var k = 0; k < aCols; k++)
-                {
-                    sum += a[i, k] * b[k, j];
-                }
+                for (var k = 0; k < aCols; k++) sum += a[i, k] * b[k, j];
                 result[i, j] = sum;
             }
         });
+
+        return result;
+    }
+
+    public static int[,] MultiplyLowLevel(int[,] a, int[,] b, int maxThreads)
+    {
+        ArgumentNullException.ThrowIfNull(a);
+        ArgumentNullException.ThrowIfNull(b);
+        if (maxThreads <= 0) throw new ArgumentException("maxThreads must be > 0", nameof(maxThreads));
+
+        var aRows = a.GetLength(0);
+        var aCols = a.GetLength(1);
+        var bRows = b.GetLength(0);
+        var bCols = b.GetLength(1);
+
+        if (aCols != bRows) throw new ArgumentException("Number of columns of A must equal number of rows of B.");
+        if (aRows == 0 || bCols == 0) return new int[aRows, bCols];
+
+        var result = new int[aRows, bCols];
+
+        var threadsCount = Math.Min(maxThreads, aRows);
+        var threads = new Thread[threadsCount];
+
+        var rowsPerThread = aRows / threadsCount;
+        var extra = aRows % threadsCount;
+        var start = 0;
+
+        for (var t = 0; t < threadsCount; t++)
+        {
+            var localStart = start;
+            var localCount = rowsPerThread + (t < extra ? 1 : 0);
+            var localEnd = localStart + localCount;
+            start = localEnd;
+
+            threads[t] = new Thread(() =>
+            {
+                for (var i = localStart; i < localEnd; i++)
+                for (var j = 0; j < bCols; j++)
+                {
+                    var sum = 0;
+                    for (var k = 0; k < aCols; k++) sum += a[i, k] * b[k, j];
+                    result[i, j] = sum;
+                }
+            });
+
+            threads[t].Start();
+        }
+
+        for (var t = 0; t < threadsCount; t++) threads[t].Join();
 
         return result;
     }
