@@ -12,7 +12,7 @@ PrintTable(new List<BenchmarkRow>
 var multiThreadedResults = new List<BenchmarkRow>();
 var lowLevelResults = new List<BenchmarkRow>();
 
-for(var i = 2; i < 16; i++)
+for(var i = 2; i < 15; i++)
 {
     var threads = i;
 
