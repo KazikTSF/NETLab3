@@ -17,6 +17,25 @@ public abstract class Matrix
         return result;
     }
 
+    public static void Print(int[,] matrix)
+    {
+        ArgumentNullException.ThrowIfNull(matrix);
+
+        var rows = matrix.GetLength(0);
+        var cols = matrix.GetLength(1);
+
+        for (var i = 0; i < rows; i++)
+        {
+            for (var j = 0; j < cols; j++)
+            {
+                if (j > 0) Console.Write(' ');
+                Console.Write(matrix[i, j]);
+            }
+
+            Console.WriteLine();
+        }
+    }
+
     public static int[,] Multiply(int[,] a, int[,] b)
     {
         ArgumentNullException.ThrowIfNull(a);
